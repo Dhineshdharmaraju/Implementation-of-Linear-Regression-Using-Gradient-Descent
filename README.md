@@ -23,53 +23,52 @@ RegisterNumber: 212225040079
 */
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
 
-def linear_regression(X1,y,learning_rate = 0.1, num_iters = 1000):
-
-
-    X = np.c_[np.ones(len(X1)),X1]
-
-
-    theta = np.zeros(X.shape[1]).reshape(-1,1)
-
-
-    for _ in range(num_iters):
-        predictions = (X).dot(theta).reshape(-1,1)
-
-
-        errors=(predictions - y ).reshape(-1,1)
-
-
-        theta -= learning_rate*(1/len(X1))*X.T.dot(errors)
+def linear_regression(X, y, iters=1000, learning_rate=0.01):
+    X = np.hstack((np.ones((X.shape[0], 1)), X)) 
+    theta = np.zeros((X.shape[1], 1))
+    
+    for _ in range(iters):
+        predictions = X.dot(theta)
+        errors = predictions - y.reshape(-1, 1)
+        gradient = (1 / X.shape[0]) * X.T.dot(errors)
+        theta -= learning_rate * gradient
+    
     return theta
-data=pd.read_csv("50_Startups.csv")
 
+data = pd.read_csv('50_Startups.csv', header=0)
 
+X = data.iloc[:, :-1].values
+y = data.iloc[:, -1].values
+
+ct = ColumnTransformer(transformers=[
+    ('encoder', OneHotEncoder(), [3])  
+], remainder='passthrough')
+
+X = ct.fit_transform(X)
+
+y = y.astype(float)
+
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+theta = linear_regression(X_scaled, y, iters=1000, learning_rate=0.01)
+
+new_data = np.array([165349.2, 136897.8, 471784.1, 'New York']).reshape(1, -1) 
+new_data_scaled = scaler.transform(ct.transform(new_data))
+
+new_prediction = np.dot(np.append(1, new_data_scaled), theta)
+
+print(f"Predicted value: {new_prediction[0]}")
 data.head()
-X=(data.iloc[1:,:-2].values)
-X1=X.astype(float)
-scaler=StandardScaler()
-y=(data.iloc[1:,-1].values).reshape(-1,1)
-X1_Scaled=scaler.fit_transform(X1)
-Y1_Scaled=scaler.fit_transform(y)
-
-
-
-theta= linear_regression(X1_Scaled,Y1_Scaled)
-
-
-new_data=np.array([165349.2,136897.8,471784.1]).reshape(-1,1)
-new_Scaled=scaler.fit_transform(new_data)
-prediction=np.dot(np.append(1,new_Scaled),theta)
-prediction=prediction.reshape(-1,1)
-pre=scaler.inverse_transform(prediction)
-print(prediction)
-print(f"Predicted value: {pre}") 
 ```
 
 ## Output:
-<img width="417" height="58" alt="Screenshot 2026-02-04 104225" src="https://github.com/user-attachments/assets/1b202c96-d253-43bf-91d2-056f6271c840" />
+<img width="667" height="262" alt="image" src="https://github.com/user-attachments/assets/ab814f08-552c-40c9-93d5-407cb3fb5951" />
+
 
 
 
